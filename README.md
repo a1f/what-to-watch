@@ -33,3 +33,16 @@ cp .env.example .env
 ```
 
 Never commit `.env` -- only `.env.example` is tracked.
+
+## Web: typed API client
+
+The web app talks to the API through a generated TypeScript client. When the
+FastAPI schema changes, refresh the snapshot and regenerate the types:
+
+```
+uv run python -c "import json,sys; from api.app.main import app; json.dump(app.openapi(), sys.stdout, indent=2)" > web/openapi.json
+pnpm --filter @wtw/web generate:api
+```
+
+Both `web/openapi.json` and the generated `web/src/lib/api/schema.ts` are
+committed; do not hand-edit the generated schema.
