@@ -1,0 +1,22 @@
+{
+  "name": "what-to-watch",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "format": "biome format --write .",
+    "check": "biome check --error-on-warnings .",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run --coverage --passWithNoTests=false"
+  },
+  "devDependencies": {
+    "@biomejs/biome": "1.9.4",
+    "@vitejs/plugin-react": "^4.3.0",
+    "@vitest/coverage-v8": "^3.2.0",
+    "jsdom": "^25.0.0",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0",
+    "typescript": "^5.8.0",
+    "vitest": "^3.2.0"
+  }
+}

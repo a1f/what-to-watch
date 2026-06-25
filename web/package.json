@@ -1,0 +1,28 @@
+{
+  "name": "@wtw/web",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "generate:api": "openapi-typescript ./openapi.json --output ./src/lib/api/schema.ts"
+  },
+  "dependencies": {
+    "next": "^15.1.0",
+    "openapi-fetch": "^0.13.0",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0"
+  },
+  "devDependencies": {
+    "@testing-library/dom": "^10.0.0",
+    "@testing-library/react": "^16.0.0",
+    "@types/node": "^22.0.0",
+    "@types/react": "^19.0.0",
+    "@types/react-dom": "^19.0.0",
+    "openapi-typescript": "^7.4.0",
+    "typescript": "^5.8.0",
+    "vitest": "^3.2.0"
+  }
+}
