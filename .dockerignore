@@ -1,0 +1,43 @@
+# Keep the build context lean and secret-free.
+
+# VCS
+.git
+.gitignore
+
+# Node / Next.js
+node_modules
+**/node_modules
+.next
+web/.next
+out
+*.tsbuildinfo
+.pnpm-store
+
+# Python
+.venv
+venv
+**/__pycache__
+*.py[cod]
+*.egg-info
+.pytest_cache
+.mypy_cache
+.ruff_cache
+
+# Test / coverage artifacts
+coverage
+htmlcov
+
+# Env / secrets (never bake real config into an image)
+.env
+.env.*
+
+# Tooling / run artifacts
+.v1-runs
+.claude
+.github
+.vscode
+.idea
+
+# Logs / OS
+*.log
+.DS_Store

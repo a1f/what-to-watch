@@ -1,0 +1,65 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+jobs:
+  api:
+    name: api (lint + types + tests)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v5
+      - run: uv sync --frozen
+      - run: uv run ruff format --check .
+      - run: uv run ruff check .
+      - run: uv run mypy --strict .
+      - run: uv run pytest -W error
+
+  web:
+    name: web (lint + types + tests)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 9.15.4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm exec biome format .
+      - run: pnpm exec biome check --error-on-warnings .
+      - run: pnpm exec tsc --noEmit
+      - run: pnpm exec vitest run --coverage --passWithNoTests=false
+
+  stack:
+    name: stack (compose boots)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Generate .env
+        run: cp .env.example .env
+      - name: Build images
+        run: docker compose build
+      - name: Start the stack (block on db + api healthchecks)
+        run: docker compose up -d --wait || { docker compose ps; docker compose logs; exit 1; }
+      - name: Assert /api/health proxies through web to FastAPI
+        run: |
+          for i in $(seq 1 12); do
+            if curl -fsS http://localhost:3000/api/health; then
+              echo "web proxied /api/health to FastAPI"
+              exit 0
+            fi
+            echo "waiting for web proxy... ($i)"
+            sleep 5
+          done
+          echo "web did not proxy /api/health within ~60s"
+          docker compose logs
+          exit 1
+      - name: Tear down
+        if: always()
+        run: docker compose down -v
