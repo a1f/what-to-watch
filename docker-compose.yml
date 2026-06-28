@@ -56,8 +56,11 @@ services:
     build:
       context: .
       dockerfile: web/Dockerfile
+      args:
+        # Baked into `next build`: Next freezes rewrite destinations at build time.
+        API_BASE_URL: http://api:8000
     environment:
-      # Server-to-server origin for the BFF proxy rewrite (see web/next.config.mjs).
+      # Kept for runtime parity (honoured if Next re-reads the config on start).
       API_BASE_URL: http://api:8000
       NEXT_PUBLIC_APP_URL: ${NEXT_PUBLIC_APP_URL:-http://localhost:3000}
     depends_on:

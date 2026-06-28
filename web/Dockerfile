@@ -15,6 +15,12 @@ COPY package.json pnpm-workspace.yaml pnpm-lock.yaml tsconfig.base.json ./
 COPY web/package.json ./web/package.json
 RUN pnpm install --frozen-lockfile
 
+# Next resolves the /api/* rewrite destination (web/next.config.mjs) at BUILD
+# time, so the API origin must be present now — not just at runtime. Defaults to
+# the compose `api` service; override via `--build-arg API_BASE_URL=...` elsewhere.
+ARG API_BASE_URL=http://api:8000
+ENV API_BASE_URL=${API_BASE_URL}
+
 # Copy the web sources (tsconfig extends ../tsconfig.base.json) and build.
 COPY web ./web
 RUN pnpm --filter @wtw/web build
