@@ -1,0 +1,72 @@
+# Full stack for local development: `docker compose up` boots Postgres, the
+# FastAPI api (after running migrations), a worker placeholder, and the Next web
+# app. Values come from `.env` (copy `.env.example`) with sane defaults inline.
+services:
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
+      POSTGRES_DB: ${POSTGRES_DB:-what_to_watch}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test:
+        ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-postgres} -d ${POSTGRES_DB:-what_to_watch}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  api:
+    build:
+      context: .
+      dockerfile: api/Dockerfile
+    environment:
+      # Always reach Postgres at the in-network host `db`, built from POSTGRES_*.
+      DATABASE_URL: postgresql+psycopg://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-postgres}@db:5432/${POSTGRES_DB:-what_to_watch}
+    depends_on:
+      db:
+        condition: service_healthy
+    # Apply migrations, then serve. The image's venv is on PATH, so call the
+    # binaries directly (no `uv run` re-sync). uvicorn binds 0.0.0.0 to publish.
+    command: sh -c "alembic upgrade head && uvicorn api.app.main:app --host 0.0.0.0 --port 8000"
+    ports:
+      - "8000:8000"
+    healthcheck:
+      # python is in the base image; urllib raises on non-200 (-> unhealthy).
+      test:
+        ["CMD-SHELL", "python -c \"import urllib.request; urllib.request.urlopen('http://localhost:8000/health')\""]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+  worker:
+    build:
+      context: .
+      dockerfile: api/Dockerfile
+    environment:
+      DATABASE_URL: postgresql+psycopg://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-postgres}@db:5432/${POSTGRES_DB:-what_to_watch}
+    depends_on:
+      db:
+        condition: service_healthy
+    # Placeholder only: the real APScheduler scheduler lands in slice 4.1.
+    command: sh -c "echo 'worker placeholder — APScheduler scheduler lands in slice 4.1'; tail -f /dev/null"
+
+  web:
+    build:
+      context: .
+      dockerfile: web/Dockerfile
+      args:
+        # Baked into `next build`: Next freezes rewrite destinations at build time.
+        API_BASE_URL: http://api:8000
+    environment:
+      # Kept for runtime parity (honoured if Next re-reads the config on start).
+      API_BASE_URL: http://api:8000
+      NEXT_PUBLIC_APP_URL: ${NEXT_PUBLIC_APP_URL:-http://localhost:3000}
+    depends_on:
+      - api
+    ports:
+      - "3000:3000"
+
+volumes:
+  pgdata:
